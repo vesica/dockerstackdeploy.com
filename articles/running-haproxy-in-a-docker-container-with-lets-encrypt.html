@@ -81,16 +81,16 @@
             Let's say you will be serving DNS for all your domains via Cloudflare. You will first need to create a .ini file with your Cloudflare API credentials, so Certbot can communicate with it.
             Create a file called <i>cloudflare.ini</i> with the following:
           </p>
-          <code>
+          <pre>
             dns_cloudflare_email = your@cloudflare.account.email
             dns_cloudflare_api_key = <<API_KEY>>
-          </code>
+          </pre>
           <p>
             Please do replace <<API_KEY>> with your actual Cloudflare API key.
           </p>
           <p>
             Now let's create the Dockerfile for the container that will have the certificates:
-            <code>
+            <pre>
               FROM vesica/haproxy-certbot:latest
 
               COPY cloudflare.ini /etc/cloudflare/cloudflare.ini
@@ -115,7 +115,7 @@
               ENTRYPOINT ["startup"]
 
               CMD ["haproxy", "-f", "/usr/local/etc/haproxy/haproxy.cfg"]
-            </code>
+            </pre>
           </p>
           <p>
             Let's go through the above Dockerfile and point our some of the finer points:
@@ -126,7 +126,7 @@
           <p>
             Let's create the startup.sh file which will put the certifcates in the right folder and start HA Proxy when the container runs. Add the following code to a file called <i>startup.sh</i>.
           </p>
-          <code>
+          <pre>
             #!/bin/sh
 
             ## Put certs in usable place. Pay attention to domain1.com, that must always be the first domain. Otherwise change the below accordingly and haproxy.cfg too.
@@ -149,7 +149,7 @@
             fi
 
             exec "$@"
-          </code>
+          </pre>
 
           <h5>Step 3: Build the container with the HA Proxy configuration</h5>
 
