@@ -79,14 +79,14 @@
           <h5>Step 2: Build the container that has all the certificates</h5>
           <p>
             Let's say you will be serving DNS for all your domains via Cloudflare. You will first need to create a .ini file with your Cloudflare API credentials, so Certbot can communicate with it.
-            Create a file called <i>cloudflare.ini</i> with the following:
+            Create a file called <code>cloudflare.ini</code> with the following:
           </p>
           <pre>
             dns_cloudflare_email = your@cloudflare.account.email
-            dns_cloudflare_api_key = <<API_KEY>>
+            dns_cloudflare_api_key = __API_KEY__
           </pre>
           <p>
-            Please do replace <<API_KEY>> with your actual Cloudflare API key.
+            Please do replace __API_KEY__ with your actual Cloudflare API key.
           </p>
           <p>
             Now let's create the Dockerfile for the container that will have the certificates:
@@ -124,7 +124,7 @@
               <li></li>
             </ul>
           <p>
-            Let's create the startup.sh file which will put the certifcates in the right folder and start HA Proxy when the container runs. Add the following code to a file called <i>startup.sh</i>.
+              Let's create the <code>startup.sh</code> file which will put the certificates in the right folder and start HA Proxy when the container runs. Add the following code to a file called <i>startup.sh</i>.
           </p>
           <pre>
             #!/bin/sh
