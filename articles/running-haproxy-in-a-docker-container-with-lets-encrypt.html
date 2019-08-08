@@ -63,8 +63,8 @@
           </p>
           <ol>
             <li>Create a base container with HA Proxy, Let's Encrypt Certbot and all the required plugins that allow us to automatically generate certs.</li>
-            <li>Use this base container to periodically build a private container which has the certificates inside it.</li>
-            <li>Use the second container and push your HA Proxy config file into it, deploy it to Docker Hub to Quay.io, and let a webhook deploy your updated configuration.</li>
+            <li>Use this base container to build a private container which has the certificates inside it.</li>
+            <li>Use the second container and push your HA Proxy config file into it, deploy it to Docker Hub to Quay.io, and let a webhook deploy your updated configuration (this deployment bit is not covered in this article).</li>
           </ol>
           <p>
             Because we use Certbot plugins and build the Docker images in Circle CI, our only limitation is that our domains' DNS be served by either Cloudflare, Linode, Route 53, or Google.
@@ -255,8 +255,15 @@
                 server w2 swarm-worker-2:port cookie S1 check
                 server w3 swarm-worker-3:port cookie S1 check
             </pre>
+          
+            <p>
+              Let's build our container with the HA Proxy configuration and the certificates. Run <code>docker build . -t haproxy</code>.
 
-          <h5>Step 4: A Docker Stack file to get you started</h5>
+              Once the container builds, you can push it up to Docker Hub or another container registry of your choice and deploy it.
+
+              Once deployed, it will have a valid Let's Encrypt Certificate for all the domains.
+            </p>
+
         </div>
       </div>
 
