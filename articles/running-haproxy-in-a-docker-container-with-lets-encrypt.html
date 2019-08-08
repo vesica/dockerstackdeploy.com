@@ -82,6 +82,8 @@
             Create a file called <code>cloudflare.ini</code> with the following:
           </p>
           <pre>
+            # cloudflare.ini
+
             dns_cloudflare_email = your@cloudflare.account.email
             dns_cloudflare_api_key = __API_KEY__
           </pre>
@@ -91,6 +93,8 @@
           <p>
               Now let's create the <code>Dockerfile</code> for the container that will have the certificates:
             <pre>
+              # Dockerfile
+
               FROM vesica/haproxy-certbot:latest
 
               COPY cloudflare.ini /etc/cloudflare/cloudflare.ini
@@ -121,12 +125,20 @@
             Let's go through the above Dockerfile and point our some of the finer points:
           </p>
             <ul>
-              <li></li>
+              <li>We start by copying our cloudflare credentials file into the container.</li>
+              <li>We create the directory and file where we will store the certificates for all the domains.
+                  <b>Note</b> that <code>domain1.com</code> should be replaced with whatever is the first domain in the list of domains you
+                  are generating certificates for.
+              </li>
+              <li>The rest is copying over a startup.sh file to start HA Proxy. We create this file below.</li>
             </ul>
           <p>
-              Let's create the <code>startup.sh</code> file which will put the certificates in the right folder and start HA Proxy when the container runs. Add the following code to a file called <i>startup.sh</i>.
+              Let's create the <code>startup.sh</code> file which will put the certificates in the right folder and start HA Proxy when the container runs.
+              Add the following code to a file called <i>startup.sh</i>.
           </p>
           <pre>
+            # startup.sh
+
             #!/bin/sh
 
             ## Put certs in usable place. Pay attention to domain1.com, that must always be the first domain. Otherwise change the below accordingly and haproxy.cfg too.
@@ -151,7 +163,98 @@
             exec "$@"
           </pre>
 
+          <p>
+            With the Dockerfile and startup.sh in place, let's build this container. Run <code>docker build . -t haproxy-certs:latest</code>.
+          </p>
+
           <h5>Step 3: Build the container with the HA Proxy configuration</h5>
+            <p>
+                To build this container, we need to create a <code>Dockerfile</code> and an <code>haproxy.cfg</code> file.
+                Let's start with the Dockferfile.
+            </p>
+            <pre>
+              # Dockerfile
+
+              FROM haproxy-certs:latest
+
+              COPY haproxy.cfg /usr/local/etc/haproxy/haproxy.cfg
+            </pre>
+
+            <p>
+              Now let's create our <code>haproxy.cfg</code> file.
+            </p>
+            <pre>
+              # haproxy.cfg
+
+              #### MAKE CHANGES HERE ONLY IF YOU REALLY KNOW WHAT YOU ARE DOING #####
+              #---------------------------------------------------------------------
+              # Global settings
+              #---------------------------------------------------------------------
+              global
+                daemon
+                maxconn 10000
+                tune.ssl.default-dh-param 2048
+
+              #---------------------------------------------------------------------
+              # common defaults that all the 'listen' and 'backend' sections will
+              # use if not designated in their block
+              #---------------------------------------------------------------------
+
+              defaults
+
+                mode                    http
+                log                     global
+                option                  dontlognull
+                option                  http-server-close
+                option                  redispatch
+                retries                 3
+                timeout http-request    1m
+                timeout queue           1m
+                timeout connect         10s
+                timeout client          1m
+                timeout server          1m
+                timeout http-keep-alive 10s
+                timeout check           10s
+                maxconn                 10000
+
+              frontend haproxy-manager
+                bind :::10000 v4v6
+                mode http
+                stats enable
+                stats auth username:password
+                stats refresh 15s
+                stats show-node
+                stats uri /haproxy-admin
+                stats admin if TRUE
+
+              frontend http-in
+                bind :80 v4v6
+                bind :::80 v6only
+                bind :443 v4v6 ssl crt /etc/letsencrypt/merged-ssl/domain1.com/domain1.com.pem
+                bind :::443 v6only ssl crt /etc/letsencrypt/merged-ssl/domain1.com/domain1.com.pem
+                option forwardfor
+                http-request set-header X-Forwarded-Proto https if { ssl_fc }
+                http-request set-header HTTPS on if { ssl_fc }
+                http-request set-header Ssl-Offloaded 1 if { ssl_fc }
+
+              ## Define hosts
+                acl host_domain1.com hdr(host) -i domain1.com
+
+              ## Figure out which backend they will use
+                use_backend domain1.com if host_domain1.com
+
+              default_backend default
+
+              backend default
+                server w1 swarm-worker-1:port cookie S1 check
+                server w2 swarm-worker-2:port cookie S1 check
+                server w3 swarm-worker-3:port cookie S1 check
+
+              backend domain1.com
+                server w1 swarm-worker-1:port cookie S1 check
+                server w2 swarm-worker-2:port cookie S1 check
+                server w3 swarm-worker-3:port cookie S1 check
+            </pre>
 
           <h5>Step 4: A Docker Stack file to get you started</h5>
         </div>
