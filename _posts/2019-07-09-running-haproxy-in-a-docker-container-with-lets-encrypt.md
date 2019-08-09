@@ -7,19 +7,19 @@ author: Abd
 Running your reverse proxy to serve domain names via HA Proxy on a Docker Swarm or Kubernetes with Let's Encrypt can be a challenge. When we set off to do this,
 we had a few goals in mind:
 
-* Auto-generate the certificates before they expire</li>
-* The ability to have virtually unlimited domain names served by the container</li>
-* Do not mount any volumes - so we can easily swap out the machines the containers are deployed on</li>
-* This should all be integrated into our CI/CD pipeline, so we can just change the HA Proxy config and push up to a git repository and the new config gets deployed</li>
+* Auto-generate the certificates before they expire
+* The ability to have virtually unlimited domain names served by the container
+* Do not mount any volumes - so we can easily swap out the machines the containers are deployed on
+* This should all be integrated into our CI/CD pipeline, so we can just change the HA Proxy config and push up to a git repository and the new config gets deployed
 
 ### The Solution
 
 In the end, we came up with a simple solution, but it does require 2 private Docker images (to avoid having mounted volumes). Here's what we did:
 
 
-1. Create a base container with HA Proxy, Let's Encrypt Certbot and all the required plugins that allow us to automatically generate certs.</li>
-2. Use this base container to build a private container which has the certificates inside it.</li>
-3. Use the second container and push your HA Proxy config file into it, deploy it to Docker Hub to Quay.io, and let a webhook deploy your updated configuration (this deployment bit is not covered in this article).</li>
+1. Create a base container with HA Proxy, Let's Encrypt Certbot and all the required plugins that allow us to automatically generate certs.
+2. Use this base container to build a private container which has the certificates inside it.
+3. Use the second container and push your HA Proxy config file into it, deploy it to Docker Hub to Quay.io, and let a webhook deploy your updated configuration (this deployment bit is not covered in this article).
 
 Because we use Certbot plugins and build the Docker images in Circle CI, our only limitation is that our domains' DNS be served by either Cloudflare, Linode, Route 53, or Google.
 
@@ -78,12 +78,12 @@ Please do replace __API_KEY__ with your actual Cloudflare API key.
 
 Let's go through the above Dockerfile and point our some of the finer points:
 
-* We start by copying our cloudflare credentials file into the container.</li>
+* We start by copying our cloudflare credentials file into the container.
 * We create the directory and file where we will store the certificates for all the domains.
       <b>Note</b> that <code>domain1.com</code> should be replaced with whatever is the first domain in the list of domains you
       are generating certificates for.
 
-* The rest is copying over a startup.sh file to start HA Proxy. We create this file below.</li>
+* The rest is copying over a startup.sh file to start HA Proxy. We create this file below.
 
   Let's create the <code>startup.sh</code> file which will put the certificates in the right folder and start HA Proxy when the container runs.
   Add the following code to a file called <i>startup.sh</i>.
