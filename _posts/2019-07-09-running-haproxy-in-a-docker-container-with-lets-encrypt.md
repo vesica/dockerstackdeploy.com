@@ -1,6 +1,6 @@
 ---
 layout: post
-author: MA Wal-Ikram
+author: Abd
 ---
 
 
